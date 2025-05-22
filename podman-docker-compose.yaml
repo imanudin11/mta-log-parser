@@ -1,0 +1,41 @@
+# compose file for deploy
+version: '3.9'
+
+services:
+  mlp:
+    image: docker.io/drlight17/mta-log-parser:latest
+    container_name: mta-log-parser
+    command: /app/run.sh ${COMMAND}
+    ports:
+      - ${PORT}:${PORT}
+    restart: always
+    volumes:
+      - ./.env:/app/.env
+      - /tmp:/tmp
+      - ${MAIL_LOG_PATH}:${MAIL_LOG_PATH}
+    depends_on:
+      - rethinkdb
+    networks:
+      - internal
+
+  rethinkdb:
+    image: docker.io/rethinkdb:2.4
+    container_name: rethinkdb
+    ports:
+      - ${RETHINK_EXP_GUI_PORT}:8080
+    restart: always
+    volumes:
+      - ./:/data
+    networks:
+      - internal
+
+networks:
+  internal:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: "172.20.0.0/16"
+    driver_opts:
+      #com.docker.network.enable_ipv6: "false"
+      com.docker.network.bridge.name: mlp_iface
